@@ -25,6 +25,8 @@
 main{max-width:760px;margin:0 auto;padding:16px}
 .hero{display:block;width:100%;max-width:441px;height:auto;margin:4px auto 8px;border-radius:12px}
 h1{font-size:24px;margin:8px 0 2px}p.sub{color:var(--mut);margin:0 0 14px}
+.card.plain{background:transparent;border:0;border-radius:0;padding:0}
+.calnote{font-size:12px;color:var(--mut);margin:8px 2px 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:3px}
@@ -33,6 +35,7 @@ button{cursor:pointer}
 textarea{width:100%}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
 .dow{text-align:center;font-size:12px;color:var(--mut)}
+.dow.sun{color:var(--bad);font-weight:700}.dow.sat{color:var(--acc);font-weight:700}
 .day{position:relative;height:54px;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;overflow:hidden;border:1px solid var(--line);border-radius:8px;padding:3px 4px;font-size:12px;text-align:left;background:var(--card);color:var(--fg)}
 .day .top{display:flex;align-items:baseline;gap:2px;white-space:nowrap}
 .day b{font-size:13px;line-height:1.3}
@@ -50,7 +53,7 @@ textarea{width:100%}
 .day.today:not(.early):not(.leave){border-color:var(--ok);box-shadow:0 0 0 1px var(--ok)}
 .day.pay:not(.early):not(.leave){background:color-mix(in srgb,var(--pay) 18%,var(--card))}
 .day.empty{visibility:hidden}
-.paybox{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.paybox{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}
 .paybox label{flex-direction:row;align-items:center;gap:8px;font-size:13px}
 .paybox select{flex:1;min-width:0}
 #payinfo{margin-top:10px}
@@ -89,7 +92,7 @@ textarea{width:100%}
 .pm button.now{border-color:var(--ok);border-width:2px}
 .credit{text-align:center;font-size:12px;color:var(--mut);margin:18px 0 8px;letter-spacing:.03em}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
-.tile{min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.tile{min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}
 .tile:empty{display:none}
 .tl{font-size:13px;color:var(--mut)}
 .tv{font-size:30px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -103,6 +106,7 @@ code{font-size:12px}
 @media(max-width:480px){
 main{padding-left:6px;padding-right:6px}
 .card{padding:12px 8px}
+.card.plain{padding:0}
 .grid{gap:3px}
 .day{height:50px;padding:3px 3px}.day b{font-size:13px}
 .day .st{left:3px}
@@ -113,9 +117,7 @@ main{padding-left:6px;padding-right:6px}
 <main>
 <img class="hero" src="header.webp" alt="움직이는 이미지: 제 행복을 찾아 떠납니다~~~!" width="441" height="248">
 <h1>조퇴할게여</h1>
-<p class="sub">시간외근무수당 정액분(출근근무일수 월 15일 이상)이 깎이지 않는 선에서 조퇴할 수 있는 횟수와 날짜를 계산합니다.</p>
-
-<div class="card">
+<div class="card plain">
   <div class="tiles"><div class="tile" id="result"></div><div class="tile" id="counter"></div></div>
   <div class="guide">
     <div class="g"><span class="chip c1">왼쪽 클릭</span><span>조퇴 → 연가 → 해제</span></div>
@@ -127,7 +129,8 @@ main{padding-left:6px;padding-right:6px}
       <div class="pm" id="pm"></div>
     </div></div><button type="button" id="next" aria-label="다음 달">▶</button></div>
   <div class="grid" id="cal"></div>
-  <div id="detail" style="margin-top:12px"></div>
+  <p class="calnote">시간외근무수당 정액분(출근근무일수 월 15일 이상)이 깎이지 않는 선에서 조퇴할 수 있는 횟수와 날짜를 계산합니다.</p>
+  <div id="detail" style="margin-top:8px"></div>
   <div class="paybox">
     <label>내 호봉 구간
       <select id="grade">
@@ -279,7 +282,7 @@ function render(){
   const {days,regular}=monthInfo(y,m);
   const pd=payDay(y,m);
   const first=new Date(y,m-1,1).getDay();
-  let html=["일","월","화","수","목","금","토"].map(d=>`<div class="dow">${d}</div>`).join("");
+  let html=["일","월","화","수","목","금","토"].map((d,i)=>`<div class="dow${i===0?" sun":i===6?" sat":""}">${d}</div>`).join("");
   for(let i=0;i<first;i++)html+=`<div class="day empty"></div>`;
   let used=0,usedE=0,usedL=0,candidates=[];
   for(const x of days){
