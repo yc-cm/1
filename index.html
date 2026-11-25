@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>조퇴할게여</title>
+<meta name="description" content="시간외근무수당 정액분을 지키면서 조퇴할 수 있는 날을 계산해 줍니다.">
+<link rel="canonical" href="https://yc-cm.github.io/1/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yc-cm.github.io/1/">
+<meta property="og:title" content="조퇴할게여">
+<meta property="og:description" content="시간외근무수당 정액분이 깎이지 않는 선에서 조퇴할 수 있는 날을 계산해 줍니다.">
+<meta property="og:image" content="https://yc-cm.github.io/1/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://yc-cm.github.io/1/og-image.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{--pay:#f0b800;--bg:#f6f8fb;--fg:#1d2330;--card:#fff;--line:#dfe3ea;--acc:#2f6fed;--ok:#1a8f4c;--bad:#d33;--mut:#6b7385}
+@media(prefers-color-scheme:dark){:root{--bg:#14171d;--fg:#e8ebf1;--card:#1d222b;--line:#323947;--acc:#6b9bff;--ok:#4ccf86;--bad:#ff6b6b;--mut:#9aa3b5}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+.hero{display:block;width:100%;max-width:441px;height:auto;margin:4px auto 8px;border-radius:12px}
+h1{font-size:24px;margin:8px 0 2px}p.sub{color:var(--mut);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+label{display:flex;flex-direction:column;font-size:13px;color:var(--mut);gap:3px}
+input,select,button,textarea{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
+button{cursor:pointer}
+textarea{width:100%}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.dow{text-align:center;font-size:12px;color:var(--mut)}
+.day{position:relative;height:54px;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;overflow:hidden;border:1px solid var(--line);border-radius:8px;padding:3px 4px;font-size:12px;text-align:left;background:var(--card);color:var(--fg)}
+.day .top{display:flex;align-items:baseline;gap:2px;white-space:nowrap}
+.day b{font-size:13px;line-height:1.3}
+.day .tg{font-size:10.5px;font-style:normal;font-weight:700;color:var(--ok)}
+.day .st{position:absolute;left:4px;bottom:3px;font-size:11px;line-height:1.2;color:var(--mut);white-space:nowrap}
+.day .coin{position:absolute;top:1px;right:2px;font-size:15px;line-height:1}
+.day.today.pay .tg{font-size:9px;letter-spacing:-.03em}
+.day.today.pay .coin{font-size:12px;right:1px}
+.day.off{background:var(--bg);color:var(--mut);cursor:default}
+.day.early{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 15%,var(--card))}
+.day.leave{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,var(--card))}
+.day.today{background:color-mix(in srgb,var(--ok) 7%,var(--card));color:var(--fg)}
+.day.today.early{background:color-mix(in srgb,var(--acc) 15%,var(--card))}
+.day.today.leave{background:color-mix(in srgb,var(--bad) 14%,var(--card))}
+.day.today:not(.early):not(.leave){border-color:var(--ok);box-shadow:0 0 0 1px var(--ok)}
+.day.pay:not(.early):not(.leave){background:color-mix(in srgb,var(--pay) 18%,var(--card))}
+.day.empty{visibility:hidden}
+.paybox{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.paybox label{flex-direction:row;align-items:center;gap:8px;font-size:13px}
+.paybox select{flex:1;min-width:0}
+#payinfo{margin-top:10px}
+.psum{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.psum .pl{font-size:13px;color:var(--mut)}
+.psum .pa{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.badge{display:inline-block;font-size:14px;font-weight:800;padding:4px 12px;border-radius:999px;color:#fff;background:var(--ok);white-space:nowrap}
+.badge.hurt{background:var(--bad)}
+.lad{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;font-variant-numeric:tabular-nums}
+.lad caption{text-align:left;font-size:12px;color:var(--mut);padding-bottom:4px}
+.lad th,.lad td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right}
+.lad th:first-child,.lad td:first-child{text-align:left}
+.lad th{font-weight:600;color:var(--mut);font-size:12px}
+.lad tr.now td{background:color-mix(in srgb,var(--acc) 12%,var(--card));font-weight:700}
+.lad td.pz{color:var(--ok)}.lad td.pc{color:var(--bad)}
+.pnote{font-size:12px;color:var(--mut);margin-top:6px}
+.guide{border:1px solid var(--line);background:color-mix(in srgb,var(--acc) 8%,var(--card));border-radius:10px;padding:10px 12px;margin-top:10px;display:grid;gap:6px}
+.g{display:grid;grid-template-columns:90px 1fr;gap:6px;align-items:baseline;font-size:14px}.chip{text-align:center}
+.g em{font-style:normal;color:var(--mut);font-size:12px}.g.sm{display:block;font-size:12px;color:var(--mut)}
+.chip{font-weight:700;font-size:13px;padding:2px 9px;border-radius:999px;color:#fff;white-space:nowrap}
+.c1{background:var(--acc)}.c2{background:#8a5cf6}.c3{background:#7a8294}
+.privacy{margin-top:10px;font-size:13px;color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--card));border:1px solid color-mix(in srgb,var(--ok) 35%,var(--line));border-radius:10px;padding:8px 12px}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.nav button{width:44px;height:40px;font-size:16px;color:var(--acc)}
+.tw{position:relative}
+#title{font-size:19px;font-weight:700;border:0;background:transparent;color:var(--fg);white-space:nowrap;padding:6px 10px;border-radius:8px}
+#title::after{content:" ▾";font-size:13px;color:var(--mut)}
+#title:hover{background:var(--bg)}
+#picker{position:absolute;z-index:10;top:100%;left:50%;transform:translateX(-50%);width:260px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);margin-top:4px}
+#picker[hidden]{display:none}
+.py{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.py button{width:36px;height:32px;color:var(--acc)}
+.pm{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pm button{padding:8px 0}
+.pm button.cur{background:var(--acc);color:#fff;border-color:var(--acc)}
+.pm button.now{border-color:var(--ok);border-width:2px}
+.credit{text-align:center;font-size:12px;color:var(--mut);margin:18px 0 8px;letter-spacing:.03em}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.tile{min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg)}
+.tile:empty{display:none}
+.tl{font-size:13px;color:var(--mut)}
+.tv{font-size:30px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tv.ok{color:var(--ok)}.tv.bad{color:var(--bad)}.tv.acc{color:var(--acc)}
+.ts{font-size:12px;color:var(--mut);margin-top:2px}
+.big{font-size:24px;font-weight:700}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.note{font-size:12px;color:var(--mut)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}
+details summary{cursor:pointer;font-weight:600}
+code{font-size:12px}
+@media(max-width:480px){
+main{padding-left:6px;padding-right:6px}
+.card{padding:12px 8px}
+.grid{gap:3px}
+.day{height:50px;padding:3px 3px}.day b{font-size:13px}
+.day .st{left:3px}
+}
+</style>
+</head>
+<body>
+<main>
+<img class="hero" src="header.webp" alt="움직이는 이미지: 제 행복을 찾아 떠납니다~~~!" width="441" height="248">
+<h1>조퇴할게여</h1>
+<p class="sub">시간외근무수당 정액분(출근근무일수 월 15일 이상)이 깎이지 않는 선에서 조퇴할 수 있는 횟수와 날짜를 계산합니다.</p>
+
+<div class="card">
+  <div class="tiles"><div class="tile" id="result"></div><div class="tile" id="counter"></div></div>
+  <div class="guide">
+    <div class="g"><span class="chip c1">왼쪽 클릭</span><span>조퇴 → 연가 → 해제</span></div>
+    <div class="g"><span class="chip c2">오른쪽 클릭</span><span>재량휴업일 지정/해제 <em>(폰은 꾹 누르기)</em></span></div>
+  </div>
+  <div class="nav"><button type="button" id="prev" aria-label="이전 달">◀</button><div class="tw"><button type="button" id="title" aria-label="월 선택">-</button><input type="hidden" id="month">
+    <div id="picker" hidden>
+      <div class="py"><button type="button" id="py-prev" aria-label="이전 해">◀</button><b id="py-year"></b><button type="button" id="py-next" aria-label="다음 해">▶</button></div>
+      <div class="pm" id="pm"></div>
+    </div></div><button type="button" id="next" aria-label="다음 달">▶</button></div>
+  <div class="grid" id="cal"></div>
+  <div id="detail" style="margin-top:12px"></div>
+  <div class="paybox">
+    <label>내 호봉 구간
+      <select id="grade">
+        <option value="12795">19호봉 이하 (시간당 12,795원)</option>
+        <option value="14213">20~29호봉 (시간당 14,213원)</option>
+        <option value="15258">30호봉 이상 (시간당 15,258원)</option>
+        <option value="16300">교감·장학관 (시간당 16,300원)</option>
+      </select>
+    </label>
+    <div id="payinfo"></div>
+  </div>
+  <div class="privacy">🔒 조퇴 기록은 서버가 아닌 <b>이 기기(브라우저)에만 저장</b>됩니다. 다른 사람에게 전송되거나 보이지 않아요.</div>
+</div>
+
+<div class="card">
+  <b>월별 조퇴 가능 횟수</b>
+  <table id="table"></table>
+</div>
+
+<div class="card">
+  <details id="settings">
+    <summary>방학 기간 입력 / 고급 설정</summary>
+    <p class="note">2026학년도 일정이 기본으로 들어 있습니다. 2027-01-05(종업식) 이후 3월 개학 전까지는 쉬는 날로 가정했으니, 실제 겨울·봄방학과 신학기 준비 기간이 나오면 수정하세요.<br>공휴일·대체공휴일과 주말은 자동으로 쉬는 날입니다. 방학식과 개학식 당일은 정상 근무일로 계산합니다.</p>
+    <label>방학 (방학식~개학식, 한 줄에 하나)
+      <textarea id="vac" rows="3" placeholder="2026-07-22~2026-08-18"></textarea>
+    </label>
+    <label style="margin-top:8px">재량휴업일 일괄 입력 (달력에서 오른쪽 클릭으로도 지정할 수 있어요)
+      <textarea id="disc" rows="3" placeholder="2026-11-20"></textarea>
+    </label>
+    <label style="margin-top:8px">기타 쉬는 날 (임시공휴일 등)
+      <textarea id="extra" rows="2" placeholder="2027-06-03"></textarea>
+    </label>
+  </details>
+</div>
+
+<p class="note">출근근무일수 15일 미만이면 부족한 날마다 1/15씩 감액되며, 이는 인사혁신처 「공무원수당 등의 업무처리지침」 안내 기준입니다. 학교·교육청의 해석이 다를 수 있으니 확인해 주세요. 입력 내용은 이 브라우저에만 저장되고 서버로 전송되지 않습니다. 공휴일은 2026~2027년분만 들어 있습니다.</p>
+<footer class="credit">Made by kh</footer>
+</main>
+<script>
+const HOL=new Set(["2026-01-01","2026-02-16","2026-02-17","2026-02-18","2026-03-02","2026-05-05","2026-05-25","2026-06-03","2026-08-17","2026-09-24","2026-09-25","2026-10-05","2026-10-09","2026-12-25",
+"2027-01-01","2027-02-08","2027-02-09","2027-03-01","2027-05-05","2027-05-13","2027-08-16","2027-09-14","2027-09-15","2027-09-16","2027-10-04","2027-10-11","2027-12-27"]);
+const $=id=>document.getElementById(id);
+const KEY="johoe-v1";
+let st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+st.days=st.days||{};st.ov=st.ov||{};
+$("grade").value=st.grade||"14213"; // 기본: 20~29호봉
+$("grade").addEventListener("change",()=>{st.grade=$("grade").value;save();render()});
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const pad=n=>String(n).padStart(2,"0");
+const now=new Date();
+const todayKey=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+$("month").value=todayKey.slice(0,7); // 항상 이번 달로 열기
+const TH=15; // 정액분 기준 출근근무일수
+// 2026학년도 학사일정 기본값 (처음 열 때만 적용, 이후 수정 가능)
+const DEF={vac:"2026-07-22~2026-08-18\n2027-01-05~2027-03-02",disc:"2026-05-01\n2026-05-04\n2026-05-25\n2026-09-28",extra:""};
+["vac","disc","extra"].forEach(id=>{if(st[id]===undefined)st[id]=DEF[id];$(id).value=st[id]});
+
+function parseLines(text){ // [[start,end],...]
+  const out=[];
+  for(const line of (text||"").split("\n")){
+    const t=line.replace(/\s/g,"");if(!t)continue;
+    const m=t.match(/^(\d{4}-\d{2}-\d{2})(?:[~–-](\d{4}-\d{2}-\d{2}))?$/);
+    if(m)out.push([m[1],m[2]||m[1]]);
+  }
+  return out;
+}
+let vacs,discs,extras;
+function prep(){vacs=parseLines(st.vac);discs=parseLines(st.disc);extras=parseLines(st.extra)}
+function isOff(key,dow,ignoreOv){
+  if(dow===0||dow===6||HOL.has(key))return "휴일";
+  if(!ignoreOv){const o=st.ov[key];if(o==="off")return "재량휴업";if(o==="on")return "";}
+  for(const [a,b] of discs)if(key>=a&&key<=b)return "재량휴업";
+  for(const [a,b] of extras)if(key>=a&&key<=b)return "휴무";
+  for(const [a,b] of vacs)if(key>a&&key<b)return "방학"; // 방학식·개학식 당일은 근무
+  return "";
+}
+// 월급날: 매달 17일, 주말·공휴일이면 그 전 평일로 앞당김
+function payDay(y,m){
+  let d=17;
+  for(;d>1;d--){
+    const key=`${y}-${pad(m)}-${pad(d)}`,dow=new Date(y,m-1,d).getDay();
+    const rest=dow===0||dow===6||HOL.has(key)||extras.some(([a,b])=>key>=a&&key<=b);
+    if(!rest)break;
+  }
+  return d;
+}
+// 다음 방학까지 남은 출근일 (오늘 포함, 방학식 당일 포함, 종일 결근 표시한 날 제외)
+function vacLabel(k){const m=+k.slice(5,7);return m>=6&&m<=8?"여름방학":(m===12||m<=2)?"겨울방학":"방학"}
+function renderCounter(){
+  const box=$("counter");
+  const list=[...vacs].filter(([a,b])=>a<b).sort((x,y)=>x[0]<y[0]?-1:1);
+  const up=list.find(([a])=>a>=todayKey);
+  const cur=list.find(([a,b])=>a<todayKey&&todayKey<b);
+  if(cur){
+    const days=Math.round((new Date(cur[1])-new Date(todayKey))/86400000);
+    box.innerHTML=`<div class="tl">${vacLabel(cur[0])} 중 · 개학식까지</div><div class="tv acc">${days}일</div><div class="ts">개학식 ${cur[1]} (달력 기준)</div>`;
+    return;
+  }
+  if(!up){box.innerHTML="";return}
+  const [a]=up;
+  if(a===todayKey){box.innerHTML=`<div class="tl">${vacLabel(a)}까지 출근일</div><div class="tv acc">D-day</div><div class="ts">오늘이 방학식(종업식)이에요</div>`;return}
+  let n=0;const cur2=new Date(todayKey+"T00:00:00");
+  for(let d=new Date(cur2);;d.setDate(d.getDate()+1)){
+    const key=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    if(key>a)break;
+    if(!isOff(key,d.getDay())&&st.days[key]!=="l")n++;
+  }
+  box.innerHTML=`<div class="tl">${vacLabel(a)}까지 출근일</div><div class="tv acc">${n}일</div><div class="ts">방학식 ${a} 포함</div>`;
+}
+// 정액분 감액: 출근근무일수가 15일 미만이면 부족한 날마다 1/15 감액 (원 단위 절사)
+const won=n=>n.toLocaleString("ko-KR")+"원";
+function payFor(unit,att,th){const full=unit*10,short=Math.max(0,th-att);const amount=Math.floor(full*(th-short)/th);return {full,short,amount,cut:full-amount}}
+function renderPay(att,th,remain,budget,used){
+  const unit=+$("grade").value, box=$("payinfo");
+  const r=payFor(unit,att,th), full=r.full;
+  const badge=r.cut?`<span class="badge hurt">−${won(r.cut)} 깎임</span>`:`<span class="badge">깎이는 금액 0원</span>`;
+  let h=`<div class="psum"><div><div class="pl">이 달 예상 지급액 (월 정액분 ${won(full)})</div><div class="pa">${won(r.amount)}</div></div>${badge}</div>`;
+  // 조퇴·결근 횟수별 표 (현재 횟수 줄 강조)
+  const n0=Math.max(budget,0), rows=[n0,n0+1,n0+2,n0+3];
+  if(used>n0+3)rows.push(used);
+  const shortOf=n=>Math.max(0,n-budget);
+  const pay=n=>Math.floor(full*(th-shortOf(n))/th);
+  const cur=used<=n0?n0:used;
+  let t=`<table class="lad"><caption>조퇴(연가 포함) 횟수에 따른 이 달 지급액</caption><tr><th>횟수</th><th>지급액</th><th>깎이는 금액</th></tr>`;
+  for(const n of rows){
+    const a=pay(n),c=full-a;
+    const label=n===n0?(budget>=0?`${n}번까지`:`${n}번`):`${n}번`;
+    t+=`<tr class="${n===cur?"now":""}"><td>${label}${n===cur?" ◀ 지금":""}</td><td>${won(a)}</td><td class="${c?"pc":"pz"}">${c?"−"+won(c):"0원"}</td></tr>`;
+  }
+  t+="</table>";
+  const note=budget<0?`이 달은 정규 근무일이 ${att+used}일뿐이라 조퇴 없이도 감액됩니다.`:remain>0?`조퇴 ${remain}번까지는 깎이지 않고, 그다음 1번마다 약 ${won(Math.round(full/th))}씩 깎여요.`:`지금부터 조퇴 1번마다 약 ${won(Math.round(full/th))}씩 깎여요.`;
+  box.innerHTML=h+t+`<div class="pnote">${note}</div>`;
+}
+function monthInfo(y,m){
+  const last=new Date(y,m,0).getDate(),days=[];
+  let regular=0;
+  for(let d=1;d<=last;d++){
+    const key=`${y}-${pad(m)}-${pad(d)}`,dow=new Date(y,m-1,d).getDay();
+    const off=isOff(key,dow);
+    if(!off)regular++;
+    days.push({d,key,dow,off});
+  }
+  return {days,regular};
+}
+function render(){
+  prep();
+  const th=TH;
+  const [y,m]=$("month").value.split("-").map(Number);
+  const {days,regular}=monthInfo(y,m);
+  const pd=payDay(y,m);
+  const first=new Date(y,m-1,1).getDay();
+  let html=["일","월","화","수","목","금","토"].map(d=>`<div class="dow">${d}</div>`).join("");
+  for(let i=0;i<first;i++)html+=`<div class="day empty"></div>`;
+  let used=0,usedE=0,usedL=0,candidates=[];
+  for(const x of days){
+    const s=x.off?"":(st.days[x.key]||"");
+    if(s==="e"){used++;usedE++}else if(s==="l"){used++;usedL++}
+    html+=`<button class="day ${x.off?"off":s==="e"?"early":s==="l"?"leave":""}${x.key===todayKey?" today":""}${x.d===pd?" pay":""}" data-k="${x.key}"><span class="top"><b>${x.d}</b>${x.key===todayKey?`<i class="tg">오늘</i>`:""}</span>${x.d===pd?`<span class="coin" role="img" aria-label="월급날" title="월급날">💰</span>`:""}<span class="st">${x.off||(s==="e"?"조퇴":s==="l"?"결근":"")}</span></button>`;
+  }
+  $("cal").innerHTML=html;$("title").textContent=`${y}년 ${m}월`;
+  const budget=regular-th;           // 이 달에 쉴 수 있는 총 일수
+  const remain=budget-used;
+  let h,dd="";
+  if(budget<0){
+    h=`<div class="tl">이번 달 조퇴</div><div class="tv bad">불가</div><div class="ts">정규 근무일 ${regular}일뿐</div>`;
+    dd=`<p>정규 근무일 ${regular}일 &lt; 기준 ${th}일이므로 이미 ${th-regular}일분 감액 대상입니다(방학 등 정규 근무일 자체가 부족).</p>`;
+  }else if(remain>=0){
+    h=`<div class="tl">앞으로 조퇴 가능</div><div class="tv ok">${remain}번</div><div class="ts">이 달 총 ${budget}번 중 ${used}번 사용</div>`;
+    dd=`<p>정규 근무일 ${regular}일 − 기준 ${th}일 = 총 ${budget}번 여유 · 사용 ${used}번(조퇴 ${usedE}, 결근 ${usedL})</p>`;
+    if(remain>0){
+      const c=days.filter(x=>!x.off&&x.key>=todayKey&&!st.days[x.key]).map(x=>x.d+"일");
+      dd+=`<p>조퇴 가능한 날(오늘 이후 근무일): ${c.length?c.join(", "):"남은 근무일 없음"}<br><span class="note">이 중 아무 날이나 ${remain}번까지 고르면 됩니다.</span></p>`;
+    }else dd+=`<p>더 이상 조퇴하면 정액분이 깎입니다.</p>`;
+  }else{
+    h=`<div class="tl">조퇴 초과 (정액분 감액)</div><div class="tv bad">${-remain}번</div><div class="ts">기준 ${th}일 미달</div>`;
+    dd=`<p>출근근무일수 ${regular-used}일 (기준 ${th}일). ${th-(regular-used)}일분 × 1/15 감액됩니다.</p>`;
+  }
+  $("result").innerHTML=h;renderCounter();renderPay(regular-used,th,remain,budget,used);$("detail").innerHTML=dd;
+  // 12개월 표
+  let t="<tr><th>월</th><th>정규 근무일</th><th>조퇴 가능</th></tr>";
+  for(let i=0;i<12;i++){
+    const dt=new Date(y,m-1+i,1),yy=dt.getFullYear(),mm=dt.getMonth()+1;
+    const r=monthInfo(yy,mm).regular,b=r-th;
+    t+=`<tr><td>${yy}년 ${mm}월</td><td>${r}일</td><td class="${b>0?"ok":"bad"}">${b>=0?b+"번":"불가"}</td></tr>`;
+  }
+  $("table").innerHTML=t;
+}
+$("cal").addEventListener("click",e=>{
+  const b=e.target.closest(".day[data-k]");if(!b||b.classList.contains("off"))return;
+  const k=b.dataset.k,cur=st.days[k]||"";
+  const nx=cur===""?"e":cur==="e"?"l":"";
+  if(nx)st.days[k]=nx;else delete st.days[k];
+  save();render();
+});
+$("cal").addEventListener("contextmenu",e=>{
+  const b=e.target.closest(".day[data-k]");if(!b)return;
+  e.preventDefault();
+  const k=b.dataset.k,dow=new Date(k).getDay();
+  if(dow===0||dow===6||HOL.has(k))return; // 주말·공휴일은 고정
+  const cur=isOff(k,dow),defOff=isOff(k,dow,true);
+  if(cur){ if(defOff)st.ov[k]="on"; else delete st.ov[k]; }
+  else { delete st.days[k]; if(defOff)delete st.ov[k]; else st.ov[k]="off"; }
+  save();render();
+});
+function shift(n){const [y,m]=$("month").value.split("-").map(Number);const d=new Date(y,m-1+n,1);$("month").value=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;render()}
+let pyear=0;
+function drawPicker(){
+  const [y,m]=$("month").value.split("-").map(Number);
+  $("py-year").textContent=pyear+"년";
+  let h="";
+  for(let i=1;i<=12;i++){
+    const cls=(pyear===y&&i===m?"cur":"")+(todayKey.startsWith(pyear+"-"+pad(i))?" now":"");
+    h+=`<button type="button" class="${cls}" data-m="${i}">${i}월</button>`;
+  }
+  $("pm").innerHTML=h;
+}
+function closePicker(){$("picker").hidden=true}
+$("title").addEventListener("click",e=>{
+  e.stopPropagation();
+  if(!$("picker").hidden){closePicker();return}
+  pyear=+$("month").value.split("-")[0];drawPicker();$("picker").hidden=false;
+});
+$("py-prev").addEventListener("click",()=>{pyear--;drawPicker()});
+$("py-next").addEventListener("click",()=>{pyear++;drawPicker()});
+$("pm").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-m]");if(!b)return;
+  $("month").value=`${pyear}-${pad(+b.dataset.m)}`;closePicker();render();
+});
+document.addEventListener("click",e=>{if(!e.target.closest("#picker"))closePicker()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closePicker()});
+$("prev").addEventListener("click",()=>shift(-1));$("next").addEventListener("click",()=>shift(1));
+$("month").addEventListener("change",render);
+["vac","disc","extra"].forEach(id=>$(id).addEventListener("input",()=>{st[id]=$(id).value;save();render()}));
+render();
+</script>
+</body>
+</html>
